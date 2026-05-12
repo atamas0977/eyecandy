@@ -26,20 +26,16 @@ case "${1:-}" in
     ssh "${SSH_FLAGS[@]}" "$HOST" "$@"
     ;;
   --sync)
-    # rsync via SSH; excludes match .gitignore intent
-    rsync -avh --delete \
-      --exclude='.git/' \
-      --exclude='target/' \
-      --exclude='Binaries/' \
-      --exclude='Intermediate/' \
-      --exclude='Saved/' \
-      --exclude='DerivedDataCache/' \
-      --exclude='audio/*.wav' \
-      --exclude='audio/*.flac' \
-      --exclude='node_modules/' \
-      -e "ssh ${SSH_FLAGS[*]}" \
-      "$HERE/" \
-      "$HOST:/Users/Alexander/eyecandy-src/"
+    # tar over ssh — FalconX doesn't have rsync. Builds tar locally, extracts on remote.
+    # Excludes match .gitignore intent.
+    pushd "$HERE" >/dev/null
+    tar --exclude='.git' --exclude='target' --exclude='Binaries' --exclude='Intermediate' \
+        --exclude='Saved' --exclude='DerivedDataCache' --exclude='audio/*.wav' \
+        --exclude='audio/*.flac' --exclude='node_modules' -czf /tmp/eyecandy-src.tar.gz .
+    popd >/dev/null
+    scp "${SSH_FLAGS[@]}" /tmp/eyecandy-src.tar.gz "$HOST:/Users/Alexander/Documents/eyecandy-src.tar.gz" >/dev/null
+    ssh "${SSH_FLAGS[@]}" "$HOST" 'powershell -Command "if (-not (Test-Path C:\Users\Alexander\eyecandy-src)) { New-Item -ItemType Directory -Path C:\Users\Alexander\eyecandy-src | Out-Null }; tar -xzf C:\Users\Alexander\Documents\eyecandy-src.tar.gz -C C:\Users\Alexander\eyecandy-src; Get-ChildItem C:\Users\Alexander\eyecandy-src | Select-Object Name, Mode"'
+    rm -f /tmp/eyecandy-src.tar.gz
     echo "Synced $HERE → FalconX:C:\\Users\\Alexander\\eyecandy-src\\"
     ;;
   --launch-editor)
