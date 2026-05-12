@@ -12,7 +12,7 @@
 | Bonsai binary download | ✅ Done | 1.79 GB extracted to `assets\bonsai-binary\Windows\` |
 | **Bonsai binary RUNS on FalconX** | ✅ **DONE** | **Confirmed live 14:38 GMT+2. `BonsaiDiorama-Win64-Test.exe` PID 125260, 4 GB RSS, healthy CPU load. Hardware baseline confirmed.** |
 | Bonsai source files (project zip) | 🔄 Downloading | 3.3 GB BITS transfer to `assets\bonsai-source\` |
-| Editor opens Bonsai (source path) | ❌ Crashes | Diagnosis: D3D12 viewport creation fails when launched via SSH (no interactive desktop session). Solution: launch via Task Scheduler interactive task (proved working for binary). Will re-test editor launch via same path. |
+| Editor opens Bonsai (source path) | ✅ **Done** | Re-launched via Task Scheduler interactive 14:43. PID 103436, 6.6 GB RSS, ~250 ShaderCompileWorker children processing first-run shaders. Healthy. |
 | GPU + driver | ✅ Done | RTX 5090 32GB, driver 591.86 |
 | Display | ✅ Done | 3440×1440 ultrawide attached (FalconX session 1, Alexander active) |
 | Visual Studio 2022 Community | ✅ Done | Engine compiled successfully so present |
@@ -43,9 +43,13 @@ NVIDIA Bonsai Diorama is running on FalconX. The cinematic should be playing on 
 ## Next moves
 
 1. ✅ Hardware baseline confirmed via binary
-2. Re-launch editor via Task Scheduler interactive path → expect it to work now
-3. Source the Getula calibration track (Beatport)
+2. ✅ Editor launches Bonsai source (via Task Scheduler interactive path) — shaders compiling
+3. Source the Getula calibration track (Beatport WAV $1.49) — AT decision
 4. Port Stratum audio crate `src/audio.rs` → `Source/EyeCandyAudio/rust/`
 5. Build the C++ FFI shim + UE5 plugin
 6. Create MPC asset + first single audio binding (`bass_slow → KeyLightIntensity`)
 7. Verify side-by-side: unmodified Bonsai cinematic vs EyeCandy-driven Bonsai under Getula
+
+## Task Scheduler launch pattern (canonical)
+
+For any GUI process on FalconX from this session, use `scripts/falconx.sh --file /tmp/<task-script>.ps1` where the script registers a `New-ScheduledTask` with `-Principal Interactive -UserId Alexander`, starts it, then unregisters. This is the only reliable way to bind D3D12 swap chains over SSH. Direct `Start-Process` over SSH crashes with `WindowsD3D12Viewport.cpp:141 — hr failed`.
