@@ -1,0 +1,38 @@
+[package]
+name = "eyecandy_audio"
+version = "0.1.0"
+edition = "2021"
+authors = ["Alexander Tamas", "Q (Quintus)"]
+description = "EyeCandy audio capture + feature extraction. Cdylib for UE5 plugin consumption."
+license = "MIT"
+# personal-only; license token is for repo hygiene, not redistribution
+
+[lib]
+name = "eyecandy_audio"
+# cdylib  - native shared library callable via C ABI (UE5 plugin loads this)
+# rlib    - rust static lib (useful for local testing binaries)
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+anyhow = "1"
+parking_lot = "0.12"
+once_cell = "1"
+
+# Audio capture (Windows WASAPI loopback, Linux ALSA/PipeWire monitor)
+cpal = "0.16"
+
+# FFT
+rustfft = "6.2"
+num-complex = "0.4"
+
+# Bytemuck for repr(C) struct that's also Pod (FFI-friendly)
+bytemuck = { version = "1", features = ["derive"] }
+
+# For C-FFI string handling later
+libc = "0.2"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"

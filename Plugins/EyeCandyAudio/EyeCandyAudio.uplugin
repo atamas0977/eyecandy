@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "EyeCandy Audio",
+	"Description": "Loopback audio capture + feature extraction (bass/mid/treble, kick, chroma) for EyeCandy. Wraps Rust cdylib over C FFI. Personal-only.",
+	"Category": "Audio",
+	"CreatedBy": "Alexander Tamas / Q",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": true,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "EyeCandyAudio",
+			"Type": "Runtime",
+			"LoadingPhase": "PreDefault",
+			"PlatformAllowList": [ "Win64" ]
+		}
+	]
+}
