@@ -6,8 +6,8 @@ This directory hosts calibration audio for EyeCandy. **Audio files themselves ar
 
 | Track | File | Status | Use |
 |---|---|---|---|
-| **Be Svendsen — Getula (Original)** | _to be sourced_ | ⏸ Pending acquisition (Beatport $1.49 WAV preferred) | **Phase 1 calibration anchor** — 108 BPM, A Major, 10-min long-form melodic house. All pipeline smoothing/refractory thresholds derived from this track. |
-| THDS — Luz | `thds - Luz.wav` (55 MB, present) | ✅ On FalconX | Secondary test track. Tale of Us. Useful for verifying pipeline generalises beyond the calibration track. |
+| **Be Svendsen — Getula (Original)** | `Be Svendsen - Getula (Original).mp3` (23.1 MB, 320 kbps MP3, 44.1 kHz stereo) | ✅ On FalconX (`C:\Users\Alexander\eyecandy\audio\`) | **Phase 1 calibration anchor** — 108 BPM, A Major, 10-min long-form melodic house. All pipeline smoothing/refractory thresholds derived from this track. Sourced from AT's Drive folder 2026-05-12 15:03. |
+| THDS — Luz | `thds - Luz.wav` (52.9 MB, present) | ✅ On FalconX | Secondary test track. Tale of Us. Useful for verifying pipeline generalises beyond the calibration track. |
 
 ## Calibration philosophy
 
