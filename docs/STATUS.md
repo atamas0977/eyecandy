@@ -43,15 +43,47 @@ NVIDIA Bonsai Diorama is running on FalconX. The cinematic should be playing on 
 ## Next moves
 
 1. ✅ Hardware baseline confirmed via binary
-2. ✅ Editor launches Bonsai source (via Task Scheduler interactive path) — shaders compiling
+2. ✅ Editor launches Bonsai source (via Task Scheduler interactive path)
 3. ✅ Stratum audio crate ported to `Source/EyeCandyAudio/rust/` (cdylib + rlib, C ABI: `eca_init` / `eca_get_features` / `eca_shutdown` / `eca_version`)
 4. ✅ Rust DLL built on FalconX (1.2 MB Windows x64) and pulled to `Plugins/EyeCandyAudio/ThirdParty/EyeCandyAudio/Win64/`
 5. ✅ UE5 plugin `EyeCandyAudio` scaffolded (.uplugin, Build.cs, USTRUCT, UEngineSubsystem)
-6. Source the Getula calibration track (Beatport WAV $1.49) — AT decision (audio AT sent didn't materialize through Telegram)
-7. Copy plugin into Bonsai project, regenerate VS project files, build the plugin module
-8. Create MPC asset + first audio binding (`bass_slow → KeyLightIntensity`) in Bonsai editor
-9. Verify side-by-side: unmodified Bonsai cinematic vs EyeCandy-driven Bonsai under Getula
+6. ✅ Getula (Be Svendsen) on FalconX as calibration track
+7. ✅ Plugin copied into Bonsai's `Plugins/`, `.uproject` patched, `Build.bat BonsaiDioramaEditor` produced `UnrealEditor-EyeCandyAudio.dll` cleanly (42.8s, no warnings)
+8. ✅ **Plugin loads at runtime**: `LogPluginManager: Mounting Project plugin EyeCandyAudio` → `LogEyeCandyAudio: Display: Loaded: eyecandy_audio 0.1.0` (proves UEngineSubsystem ran `Initialize()`, loaded the Rust DLL via `FPlatformProcess::GetDllHandle`, called `eca_version()` over FFI, and would have called `eca_init()` next). No error logged → capture is active.
+9. Create MPC asset + first audio binding (`bass_slow → KeyLightIntensity`) in Bonsai editor — UI task, can be Python-automated or done by AT
+10. Verify side-by-side: unmodified Bonsai cinematic vs EyeCandy-driven Bonsai under Getula
+
+## Working integration milestone reached 🎉
+
+As of 15:35 GMT+2 the full audio plumbing stack is operational:
+```
+Getula.mp3 (FalconX audio out)
+        ↓ (WASAPI loopback)
+cpal capture thread (in libeyecandy_audio.dll)
+        ↓ (FFT, ISO 226, 2-stage smoothing, kick detector)
+AudioFeatures struct (shared mutex)
+        ↓ (eca_get_features over C ABI)
+UEyeCandyAudioSubsystem (UE5 game thread tick)
+        ↓ (FEyeCandyAudioFeatures USTRUCT)
+Blueprint / MPC drivers (next step: wire to KeyLightIntensity)
+```
+
+The last step is purely scene wiring inside the Bonsai editor.
 
 ## Task Scheduler launch pattern (canonical)
 
 For any GUI process on FalconX from this session, use `scripts/falconx.sh --file /tmp/<task-script>.ps1` where the script registers a `New-ScheduledTask` with `-Principal Interactive -UserId Alexander`, starts it, then unregisters. This is the only reliable way to bind D3D12 swap chains over SSH. Direct `Start-Process` over SSH crashes with `WindowsD3D12Viewport.cpp:141 — hr failed`.
+
+## Build pattern (canonical, for plugin iteration)
+
+1. Kill UnrealEditor + LiveCodingConsole + Bonsai + UnrealTraceServer (any of these holding locks will break Build.bat)
+2. `Build.bat BonsaiDioramaEditor Win64 Development -Project=<.uproject path> -NoXGE`
+3. Re-launch editor via Task Scheduler interactive
+
+Live Coding will hot-patch C++ changes in many cases without needing the full kill+build cycle. But for plugin module *structural* changes (new UObject, new module dependency), full rebuild is safer.
+
+## Repo
+
+- Local: `/home/atamas/.openclaw/workspace/projects/eyecandy/` (Quintus)
+- Remote: https://github.com/atamas0977/eyecandy (private)
+- FalconX sync: `C:\Users\Alexander\eyecandy-src\` (workspace mirror) + `C:\Users\Alexander\eyecandy\` (engine + Bonsai project + audio)
