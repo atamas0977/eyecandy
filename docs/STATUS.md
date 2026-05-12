@@ -44,11 +44,13 @@ NVIDIA Bonsai Diorama is running on FalconX. The cinematic should be playing on 
 
 1. ✅ Hardware baseline confirmed via binary
 2. ✅ Editor launches Bonsai source (via Task Scheduler interactive path) — shaders compiling
-3. Source the Getula calibration track (Beatport WAV $1.49) — AT decision
-4. Port Stratum audio crate `src/audio.rs` → `Source/EyeCandyAudio/rust/`
-5. Build the C++ FFI shim + UE5 plugin
-6. Create MPC asset + first single audio binding (`bass_slow → KeyLightIntensity`)
-7. Verify side-by-side: unmodified Bonsai cinematic vs EyeCandy-driven Bonsai under Getula
+3. ✅ Stratum audio crate ported to `Source/EyeCandyAudio/rust/` (cdylib + rlib, C ABI: `eca_init` / `eca_get_features` / `eca_shutdown` / `eca_version`)
+4. ✅ Rust DLL built on FalconX (1.2 MB Windows x64) and pulled to `Plugins/EyeCandyAudio/ThirdParty/EyeCandyAudio/Win64/`
+5. ✅ UE5 plugin `EyeCandyAudio` scaffolded (.uplugin, Build.cs, USTRUCT, UEngineSubsystem)
+6. Source the Getula calibration track (Beatport WAV $1.49) — AT decision (audio AT sent didn't materialize through Telegram)
+7. Copy plugin into Bonsai project, regenerate VS project files, build the plugin module
+8. Create MPC asset + first audio binding (`bass_slow → KeyLightIntensity`) in Bonsai editor
+9. Verify side-by-side: unmodified Bonsai cinematic vs EyeCandy-driven Bonsai under Getula
 
 ## Task Scheduler launch pattern (canonical)
 
