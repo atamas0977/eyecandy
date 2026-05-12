@@ -1,0 +1,44 @@
+# UE5 build artifacts
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+*.VC.db
+*.opensdf
+*.suo
+
+# Engine itself never tracked
+assets/nvrtx-engine/
+assets/bonsai-binary/
+assets/bonsai-source/
+
+# Third-party Bonsai project
+zenparticles-ai/
+
+# Audio assets (live on FalconX only, may be copyrighted)
+audio/*.wav
+audio/*.flac
+audio/*.aiff
+audio/*.mp3
+audio/*.m4a
+!audio/README.md
+
+# Rust build
+target/
+**/*.rs.bk
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs / state
+*.log
+local/
+secrets/
