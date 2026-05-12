@@ -67,6 +67,18 @@ private:
 	FTSTicker::FDelegateHandle TickHandle;
 	void* DllHandle = nullptr;
 	bool bCaptureActive = false;
+
+	// Phase 1 hard-coded binding: BassSlow -> MPC_EyeCandy.KeyLightIntensity.
+	// Looked up by soft path on first tick after world init; held weak so we
+	// don't keep the asset loaded against PIE world tear-down.
+	class UMaterialParameterCollection* CachedMPC = nullptr;
+	bool bMPCLookupAttempted = false;
+
+	// Phase 1 hard-coded binding: BassSlow -> DirectionalLightComponent->Intensity
+	// for any DirectionalLight actor tagged "EyeCandyKey". We cache the base
+	// intensity on first sight so each frame is a multiplicative scaling, not
+	// an additive drift. Cleared whenever the world changes.
+	TMap<TWeakObjectPtr<class UDirectionalLightComponent>, float> KeyLightBaseIntensity;
 };
 
 class FEyeCandyAudioModule : public IModuleInterface

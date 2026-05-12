@@ -1,10 +1,20 @@
 // Copyright (c) 2026 Alexander Tamas. Personal-only.
 #include "EyeCandyAudio.h"
+#include "Components/DirectionalLightComponent.h"
+#include "Components/LightComponent.h"
 #include "Containers/Ticker.h"
+#include "Engine/DirectionalLight.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
+#include "EngineUtils.h" // TActorIterator
+#include "GameFramework/Actor.h"
 #include "HAL/PlatformProcess.h"
 #include "Interfaces/IPluginManager.h"
+#include "Materials/MaterialParameterCollection.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
 #include "Misc/Paths.h"
 #include "Modules/ModuleManager.h"
+#include "UObject/UObjectGlobals.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogEyeCandyAudio, Log, All);
 
@@ -124,6 +134,13 @@ FString UEyeCandyAudioSubsystem::GetLibraryVersion() const
 	return TEXT("<unloaded>");
 }
 
+// Map x in [in_min..in_max] -> [out_min..out_max], clamped.
+static inline float MapRangeClamped(float x, float InMin, float InMax, float OutMin, float OutMax)
+{
+	const float t = FMath::Clamp((x - InMin) / FMath::Max(InMax - InMin, KINDA_SMALL_NUMBER), 0.0f, 1.0f);
+	return OutMin + t * (OutMax - OutMin);
+}
+
 bool UEyeCandyAudioSubsystem::TickFeatures(float /*DeltaTime*/)
 {
 	if (!bCaptureActive || !g_eca_get_features) { return true; }
@@ -149,6 +166,69 @@ bool UEyeCandyAudioSubsystem::TickFeatures(float /*DeltaTime*/)
 	CachedFeatures.BassPos = FVector(N.bass_pos[0], N.bass_pos[1], N.bass_pos[2]);
 	CachedFeatures.MidPos  = FVector(N.mid_pos[0],  N.mid_pos[1],  N.mid_pos[2]);
 	CachedFeatures.TreblePos = FVector(N.treble_pos[0], N.treble_pos[1], N.treble_pos[2]);
+
+	// ---- Phase 1 binding: BassSlow -> MPC_EyeCandy.KeyLightIntensity ----
+	// Lookup MPC lazily on first tick (asset registry may not be ready at
+	// Initialize() time). After first attempt we cache the result (even if null)
+	// to avoid hot-path lookups every frame.
+	if (!bMPCLookupAttempted)
+	{
+		bMPCLookupAttempted = true;
+		// Try the canonical path created by the Python automation.
+		CachedMPC = LoadObject<UMaterialParameterCollection>(nullptr, TEXT("/Game/MPC_EyeCandy.MPC_EyeCandy"));
+		if (CachedMPC)
+		{
+			UE_LOG(LogEyeCandyAudio, Display, TEXT("Bound MPC: %s"), *CachedMPC->GetPathName());
+		}
+		else
+		{
+			UE_LOG(LogEyeCandyAudio, Warning, TEXT("MPC_EyeCandy not found at /Game/MPC_EyeCandy. Bindings inert until asset exists."));
+		}
+	}
+
+	// Map bass_slow (~0..1 in practice) -> KeyLightIntensity scalar 0.7..1.6
+	const float KeyLightIntensity = MapRangeClamped(N.bass_slow, 0.0f, 1.0f, 0.7f, 1.6f);
+
+	if (GEngine)
+	{
+		for (const FWorldContext& Ctx : GEngine->GetWorldContexts())
+		{
+			UWorld* World = Ctx.World();
+			if (!World) continue;
+
+			// 1. Write the scalar to the MPC instance (if MPC asset exists).
+			if (CachedMPC)
+			{
+				if (UMaterialParameterCollectionInstance* Inst = World->GetParameterCollectionInstance(CachedMPC))
+				{
+					Inst->SetScalarParameterValue(TEXT("KeyLightIntensity"), KeyLightIntensity);
+				}
+			}
+
+			// 2. Direct light driver: scale intensity on any DirectionalLight
+			//    actor with the actor tag "EyeCandyKey". Caches base intensity on
+			//    first sight so we scale instead of overwrite.
+			for (TActorIterator<ADirectionalLight> It(World); It; ++It)
+			{
+				ADirectionalLight* DL = *It;
+				if (!DL || !DL->Tags.Contains(FName(TEXT("EyeCandyKey")))) continue;
+
+				UDirectionalLightComponent* Comp = DL->GetComponent();
+				if (!Comp) continue;
+
+				TWeakObjectPtr<UDirectionalLightComponent> WeakComp = Comp;
+				float* BasePtr = KeyLightBaseIntensity.Find(WeakComp);
+				if (!BasePtr)
+				{
+					BasePtr = &KeyLightBaseIntensity.Add(WeakComp, Comp->Intensity);
+					UE_LOG(LogEyeCandyAudio, Display,
+						TEXT("Bound key light: %s (base intensity %.3f)"),
+						*DL->GetName(), *BasePtr);
+				}
+				Comp->SetIntensity((*BasePtr) * KeyLightIntensity);
+			}
+		}
+	}
 
 	return true; // keep ticking
 }

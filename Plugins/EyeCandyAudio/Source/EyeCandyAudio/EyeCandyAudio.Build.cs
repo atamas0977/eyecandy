@@ -20,6 +20,7 @@ public class EyeCandyAudio : ModuleRules
 			"Core",
 			"CoreUObject",
 			"Engine",
+			"RenderCore", // for FMaterialParameterCollectionInstanceResource (used transitively)
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
